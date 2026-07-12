@@ -1,0 +1,1 @@
+ALTER TABLE public.agendamentos ADD COLUMN IF NOT EXISTS servicos_adicionais text[] NOT NULL DEFAULT '{}';
