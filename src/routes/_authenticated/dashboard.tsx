@@ -151,15 +151,9 @@ function Dashboard() {
         </section>
 
         {/* Toolbar */}
-<<<<<<< HEAD
-        <section className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="flex-1 min-w-0">
-=======
         <section className="grid gap-3">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="col-span-2 sm:col-auto">
->>>>>>> origin/main
               <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="all" className="flex-1 sm:flex-none">Todos</TabsTrigger>
                 <TabsTrigger value="em_aberto" className="flex-1 sm:flex-none">Em Aberto</TabsTrigger>
@@ -180,14 +174,8 @@ function Dashboard() {
               </TabsList>
             </Tabs>
           </div>
-<<<<<<< HEAD
-
-          <div className="flex items-center gap-2 w-full">
-            <div className="relative flex-1">
-=======
           <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:flex sm:justify-end">
             <div className="relative min-w-0 sm:w-64">
->>>>>>> origin/main
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente…"
