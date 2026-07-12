@@ -79,10 +79,15 @@ function Dashboard() {
   }, [items]);
 
   const filtered = useMemo(() => {
-    return items.filter((i) => {
+    const list = items.filter((i) => {
       if (filter !== "all" && i.status !== filter) return false;
       if (search && !i.cliente.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
+    });
+    return list.sort((a, b) => {
+      const dateDiff = b.data_servico.localeCompare(a.data_servico);
+      if (dateDiff !== 0) return dateDiff;
+      return b.hora_inicio.localeCompare(a.hora_inicio);
     });
   }, [items, filter, search]);
 
