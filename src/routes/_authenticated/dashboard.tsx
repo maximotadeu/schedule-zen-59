@@ -19,6 +19,7 @@ import { CalendarView } from "@/components/CalendarView";
 import { CobrancaDialog } from "@/components/CobrancaDialog";
 import { FotosDialog } from "@/components/FotosDialog";
 import { GrupoSetup } from "@/components/GrupoSetup";
+import { RelatoriosView } from "@/components/RelatoriosView";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +47,7 @@ import {
   MoreHorizontal,
   Plus,
   MessageSquare,
+  BarChart3,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,7 +63,7 @@ function Dashboard() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<"list" | "calendar" | "reports">("list");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["agendamentos"],
@@ -166,7 +168,7 @@ function Dashboard() {
               </TabsList>
             </Tabs>
 
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "calendar")} className="col-span-2 sm:col-auto">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="col-span-2 sm:col-auto">
               <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center gap-1.5">
                   <List className="h-4 w-4" />
@@ -176,31 +178,34 @@ function Dashboard() {
                   <Calendar className="h-4 w-4" />
                   <span className="hidden xs:inline">Calendário</span>
                 </TabsTrigger>
+                <TabsTrigger value="reports" className="flex-1 sm:flex-none flex items-center gap-1.5">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden xs:inline">Relatórios</span>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between w-full">
             <div className="relative w-full sm:w-72">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 w-full"
+                className="pl-9 w-full h-10 sm:h-9"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:gap-2">
               <CobrancaDialog
                 items={items}
                 trigger={
                   <Button
                     size="default"
                     variant="outline"
-                    className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer w-full h-10 px-3 py-2 text-sm sm:h-9 sm:w-auto"
+                    className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    <span>Cobrar</span>
-                    <span className="hidden xs:inline">via WhatsApp</span>
+                    <span>Cobrar via WhatsApp</span>
                   </Button>
                 }
               />
@@ -208,11 +213,10 @@ function Dashboard() {
                 trigger={
                   <Button
                     size="default"
-                    className="gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 cursor-pointer w-full h-10 px-3 py-2 text-sm sm:h-9 sm:w-auto"
+                    className="gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto"
                   >
                     <Plus className="h-4 w-4" />
-                    <span>Novo</span>
-                    <span className="hidden xs:inline">Agendamento</span>
+                    <span>Novo Agendamento</span>
                   </Button>
                 }
               />
@@ -248,12 +252,14 @@ function Dashboard() {
               ))
             )}
           </section>
-        ) : (
+        ) : viewMode === "calendar" ? (
           <CalendarView
             items={filtered}
             onToggleStatus={(id, status) => toggle.mutate({ id, status })}
             onDeleteAgendamento={(id) => remove.mutate(id)}
           />
+        ) : (
+          <RelatoriosView items={items} />
         )}
       </main>
     </div>

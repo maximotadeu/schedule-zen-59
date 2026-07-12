@@ -53,15 +53,22 @@ function getAdditionalServiceInfo(serviceName: string): { label: string; preco: 
 interface CobrancaDialogProps {
   items: Agendamento[];
   trigger?: React.ReactNode;
+  defaultClient?: string;
 }
 
-export function CobrancaDialog({ items, trigger }: CobrancaDialogProps) {
+export function CobrancaDialog({ items, trigger, defaultClient }: CobrancaDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedClient, setSelectedClient] = useState(defaultClient || "");
   const [zelleKey, setZelleKey] = useState(() => {
     return localStorage.getItem("zelle_key") || "(407)488-2824";
   });
   const [checkedIds, setCheckedIds] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (open && defaultClient) {
+      setSelectedClient(defaultClient);
+    }
+  }, [open, defaultClient]);
   const [customMessage, setCustomMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
