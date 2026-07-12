@@ -268,11 +268,11 @@ function AgendamentoRow({
   const dateLabel = format(parseISO(a.data_servico), "EEE, dd MMM yyyy", { locale: ptBR });
   return (
     <Card className="shadow-card hover:shadow-elevated transition-shadow">
-      <CardContent className="p-4 sm:p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 items-start">
+      <CardContent className="p-4 sm:p-5 space-y-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold text-base truncate">{a.cliente}</h3>
+              <h3 className="font-semibold text-base break-words">{a.cliente}</h3>
               {isPago ? (
                 <Badge className="bg-success text-success-foreground hover:bg-success">Pago</Badge>
               ) : (
@@ -283,15 +283,15 @@ function AgendamentoRow({
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <CalendarClock className="h-3.5 w-3.5" />
+                <CalendarClock className="h-3.5 w-3.5 shrink-0" />
                 {dateLabel}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
+                <Clock className="h-3.5 w-3.5 shrink-0" />
                 {a.hora_inicio.slice(0, 5)} – {a.hora_fim.slice(0, 5)}
               </span>
               {a.descricao && (
-                <span className="inline-flex items-center gap-1.5 min-w-0">
+                <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{a.descricao}</span>
                 </span>
@@ -313,57 +313,52 @@ function AgendamentoRow({
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <span className="text-lg sm:text-xl font-bold">{currency(Number(a.valor))}</span>
-            <div className="flex items-center gap-1">
-              {isPago ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onToggle("em_aberto")}
-                  title="Reverter para Em Aberto"
-                >
-                  <Undo2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Reverter</span>
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => onToggle("pago")}
-                  className="bg-success text-success-foreground hover:bg-success/90"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Marcar Pago</span>
-                </Button>
-              )}
+          <span className="text-lg sm:text-xl font-bold whitespace-nowrap">{currency(Number(a.valor))}</span>
+        </div>
 
-              <NovoAgendamentoDialog
-                agendamento={a}
-                trigger={
-                  <Button size="sm" variant="ghost" title="Editar" className="cursor-pointer">
-                    <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                    <span className="hidden sm:inline">Editar</span>
-                  </Button>
-                }
-              />
+        <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t">
+          {isPago ? (
+            <Button size="sm" variant="ghost" onClick={() => onToggle("em_aberto")} title="Reverter para Em Aberto">
+              <Undo2 className="h-4 w-4" />
+              <span>Reverter</span>
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => onToggle("pago")}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Marcar Pago</span>
+            </Button>
+          )}
 
-              <FotosDialog
-                agendamento={a}
-                trigger={
-                  <Button size="sm" variant="ghost" title="Enviar fotos" className="cursor-pointer">
-                    <Camera className="h-4 w-4 text-blue-500" />
-                    <span className="hidden sm:inline">Fotos</span>
-                  </Button>
-                }
-              />
-
-              <Button size="sm" variant="ghost" onClick={onDelete} title="Excluir">
-                <Trash2 className="h-4 w-4 text-destructive" />
+          <NovoAgendamentoDialog
+            agendamento={a}
+            trigger={
+              <Button size="sm" variant="ghost" title="Editar" className="cursor-pointer">
+                <Pencil className="h-4 w-4" />
+                <span>Editar</span>
               </Button>
-            </div>
-          </div>
+            }
+          />
+
+          <FotosDialog
+            agendamento={a}
+            trigger={
+              <Button size="sm" variant="ghost" title="Enviar fotos" className="cursor-pointer">
+                <Camera className="h-4 w-4 text-blue-500" />
+                <span>Fotos</span>
+              </Button>
+            }
+          />
+
+          <Button size="sm" variant="ghost" onClick={onDelete} title="Excluir" className="ml-auto">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
         </div>
       </CardContent>
     </Card>
   );
 }
+
