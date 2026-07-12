@@ -64,6 +64,8 @@ function Dashboard() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "calendar" | "reports">("list");
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["agendamentos"],
@@ -83,6 +85,16 @@ function Dashboard() {
       return true;
     });
   }, [items, filter, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+
+  const paginatedItems = useMemo(() => {
+    return filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  }, [filtered, page]);
 
   const toggle = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "em_aberto" | "pago" }) => setStatus(id, status),
@@ -133,8 +145,6 @@ function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        <GrupoSetup onGroupChange={() => qc.invalidateQueries({ queryKey: ["agendamentos"] })} />
-
         {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
@@ -240,16 +250,44 @@ function Dashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filtered.map((a) => (
-                <AgendamentoRow
-                  key={a.id}
-                  a={a}
-                  onToggle={(status) => toggle.mutate({ id: a.id, status })}
-                  onDelete={() => {
-                    if (confirm(`Excluir agendamento de ${a.cliente}?`)) remove.mutate(a.id);
-                  }}
-                />
-              ))
+              <>
+                {paginatedItems.map((a) => (
+                  <AgendamentoRow
+                    key={a.id}
+                    a={a}
+                    onToggle={(status) => toggle.mutate({ id: a.id, status })}
+                    onDelete={() => {
+                      if (confirm(`Excluir agendamento de ${a.cliente}?`)) remove.mutate(a.id);
+                    }}
+                  />
+                ))}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 pt-4 pb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="cursor-pointer"
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Página {page} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="cursor-pointer"
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         ) : viewMode === "calendar" ? (
@@ -261,6 +299,8 @@ function Dashboard() {
         ) : (
           <RelatoriosView items={items} />
         )}
+
+        <GrupoSetup onGroupChange={() => qc.invalidateQueries({ queryKey: ["agendamentos"] })} />
       </main>
     </div>
   );
