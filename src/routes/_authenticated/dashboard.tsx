@@ -3,14 +3,18 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listAgendamentos,
+  listFolgas,
   setStatus,
   deleteAgendamento,
+  deleteFolga,
+  isFolga,
   currency,
   type Agendamento,
 } from "@/lib/agendamentos";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +26,7 @@ import { GrupoSetup } from "@/components/GrupoSetup";
 import { RelatoriosView } from "@/components/RelatoriosView";
 import { ClientesView } from "@/components/ClientesView";
 import { ProPlanModal } from "@/components/ProPlanModal";
+import { MarcarFolgaDialog } from "@/components/MarcarFolgaDialog";
 import { getGrupo, joinGrupo } from "@/lib/grupos";
 import {
   DropdownMenu,
@@ -54,11 +59,13 @@ import {
   Users,
   Settings,
   User,
+  UserCircle,
   KeyRound,
   ShieldCheck,
   Edit,
   Upload,
   Loader2,
+  Palmtree,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -81,7 +88,6 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState<MainTab>("agenda");
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -91,6 +97,8 @@ function Dashboard() {
   const [showProModal, setShowProModal] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [updatingPassword, setUpdatingPassword] = useState(false);
@@ -108,14 +116,22 @@ function Dashboard() {
     queryFn: listAgendamentos,
   });
 
+  const { data: folgas = [] } = useQuery({
+    queryKey: ["folgas"],
+    queryFn: listFolgas,
+  });
+
+  // Filter out folga items for financial/list views
+  const realItems = useMemo(() => items.filter((i) => !isFolga(i)), [items]);
+
   const stats = useMemo(() => {
-    const aReceber = items.filter((i) => i.status === "em_aberto").reduce((s, i) => s + Number(i.valor), 0);
-    const recebido = items.filter((i) => i.status === "pago").reduce((s, i) => s + Number(i.valor), 0);
-    return { aReceber, recebido, total: items.length };
-  }, [items]);
+    const aReceber = realItems.filter((i) => i.status === "em_aberto").reduce((s, i) => s + Number(i.valor), 0);
+    const recebido = realItems.filter((i) => i.status === "pago").reduce((s, i) => s + Number(i.valor), 0);
+    return { aReceber, recebido, total: realItems.length };
+  }, [realItems]);
 
   const filtered = useMemo(() => {
-    const list = items.filter((i) => {
+    const list = realItems.filter((i) => {
       if (filter !== "all" && i.status !== filter) return false;
       if (search && !i.cliente.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -125,7 +141,7 @@ function Dashboard() {
       if (dateDiff !== 0) return dateDiff;
       return b.hora_inicio.localeCompare(a.hora_inicio);
     });
-  }, [items, filter, search]);
+  }, [realItems, filter, search]);
 
   useEffect(() => {
     setPage(1);
@@ -166,6 +182,7 @@ function Dashboard() {
       setUser({ email: "dev@local.com", user_metadata: {} });
       setIsPro(localStorage.getItem("dev_is_pro") === "true");
       setAvatarUrl(localStorage.getItem("dev_avatar"));
+      setDisplayName(localStorage.getItem("dev_display_name") || "");
       return;
     }
 
@@ -175,6 +192,7 @@ function Dashboard() {
         setUser(userData.user);
         setIsPro(!!userData.user.user_metadata?.is_pro);
         setAvatarUrl(userData.user.user_metadata?.avatar_url || null);
+        setDisplayName(userData.user.user_metadata?.display_name || "");
       }
     } catch (e) {
       console.error(e);
@@ -234,11 +252,23 @@ function Dashboard() {
     },
   });
 
+  const handleRemoveFolga = async (dateStr: string) => {
+    try {
+      await deleteFolga(dateStr);
+      qc.invalidateQueries({ queryKey: ["agendamentos"] });
+      qc.invalidateQueries({ queryKey: ["folgas"] });
+      toast.success("Folga removida!");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao remover folga.");
+    }
+  };
+
   const signOut = async () => {
     if (import.meta.env.DEV && localStorage.getItem("dev_mode") === "true") {
       localStorage.removeItem("dev_mode");
       localStorage.removeItem("dev_is_pro");
       localStorage.removeItem("dev_avatar");
+      localStorage.removeItem("dev_display_name");
       navigate({ to: "/auth" });
       return;
     }
@@ -246,48 +276,113 @@ function Dashboard() {
     navigate({ to: "/auth" });
   };
 
-  // Avatar Upload Logic
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 600 * 1024) {
-      toast.error("A foto deve ser menor que 600KB.");
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A foto deve ser menor que 2MB.");
       return;
     }
 
     setUploadingAvatar(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      try {
-        if (import.meta.env.DEV && localStorage.getItem("dev_mode") === "true") {
+    try {
+      if (import.meta.env.DEV && localStorage.getItem("dev_mode") === "true") {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
           localStorage.setItem("dev_avatar", base64);
           setAvatarUrl(base64);
           toast.success("Foto de perfil atualizada!");
-          return;
-        }
-
-        const { error } = await supabase.auth.updateUser({
-          data: { avatar_url: base64 }
-        });
-        if (error) throw error;
-        setAvatarUrl(base64);
-        toast.success("Foto de perfil atualizada com sucesso!");
-      } catch (err: any) {
-        toast.error(err.message || "Erro ao atualizar foto de perfil.");
-      } finally {
-        setUploadingAvatar(false);
+          setUploadingAvatar(false);
+        };
+        reader.readAsDataURL(file);
+        return;
       }
-    };
-    reader.readAsDataURL(file);
+
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Não autenticado");
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userData.user.id}/avatar.${fileExt}`;
+
+      // Try Supabase Storage first
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        // Fallback to base64 in user_metadata
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result as string;
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { avatar_url: base64 }
+          });
+          if (updateError) {
+            toast.error(updateError.message);
+          } else {
+            setAvatarUrl(base64);
+            toast.success("Foto de perfil atualizada!");
+          }
+          setUploadingAvatar(false);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl + "?t=" + Date.now();
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast.success("Foto de perfil atualizada com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar foto de perfil.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Display Name Save Logic
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      toast.error("Digite um nome.");
+      return;
+    }
+    setSavingName(true);
+    try {
+      if (import.meta.env.DEV && localStorage.getItem("dev_mode") === "true") {
+        localStorage.setItem("dev_display_name", displayName.trim());
+        toast.success("Nome atualizado!");
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        data: { display_name: displayName.trim() }
+      });
+      if (error) throw error;
+      toast.success("Nome atualizado com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar o nome.");
+    } finally {
+      setSavingName(false);
+    }
   };
 
   // Password Change Logic
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword) {
-      toast.error("Digite a nova senha.");
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -565,10 +660,51 @@ function Dashboard() {
         {/* Content viewport area */}
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           
-          {/* TAB 1: Agenda */}
+          {/* ═══════════════ TAB 1: AGENDA (Calendar Only) ═══════════════ */}
           {activeTab === "agenda" && (
+            <div className="space-y-4">
+              {/* Compact toolbar: action buttons only */}
+              <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-2">
+                <NovoAgendamentoDialog
+                  trigger={
+                    <Button
+                      size="default"
+                      className="gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Novo Agendamento</span>
+                    </Button>
+                  }
+                />
+                <MarcarFolgaDialog
+                  trigger={
+                    <Button
+                      size="default"
+                      variant="outline"
+                      className="gap-2 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto border-slate-300 text-slate-600 hover:bg-slate-50"
+                    >
+                      <Palmtree className="h-4 w-4" />
+                      <span>Marcar Folga</span>
+                    </Button>
+                  }
+                />
+              </div>
+
+              {/* Calendar as the main and only view */}
+              <CalendarView
+                items={items}
+                folgas={folgas}
+                onToggleStatus={(id, status) => toggle.mutate({ id, status })}
+                onDeleteAgendamento={(id) => remove.mutate(id)}
+                onRemoveFolga={handleRemoveFolga}
+              />
+            </div>
+          )}
+
+          {/* ═══════════════ TAB 2: FINANCEIRO ═══════════════ */}
+          {activeTab === "financeiro" && (
             <div className="space-y-6">
-              {/* Stats Summary Panel */}
+              {/* Stats Summary Panel (moved from Agenda) */}
               <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                   label="Total a Receber"
@@ -590,87 +726,68 @@ function Dashboard() {
                 />
               </section>
 
-              {/* Toolbar */}
-              <section className="grid gap-3">
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-                  <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="col-span-2 sm:col-auto">
-                    <TabsList className="w-full sm:w-auto">
-                      <TabsTrigger value="all" className="flex-1 sm:flex-none">Todos</TabsTrigger>
-                      <TabsTrigger value="em_aberto" className="flex-1 sm:flex-none">Em Aberto</TabsTrigger>
-                      <TabsTrigger value="pago" className="flex-1 sm:flex-none">Pagos</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+              {/* Detailed reports */}
+              <RelatoriosView items={realItems} />
 
-                  <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="col-span-2 sm:col-auto">
-                    <TabsList className="w-full sm:w-auto">
-                      <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center gap-1.5">
-                        <List className="h-4 w-4" />
-                        <span className="hidden xs:inline">Lista</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="calendar" className="flex-1 sm:flex-none flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4" />
-                        <span className="hidden xs:inline">Calendário</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between w-full">
-                  <div className="relative w-full sm:w-72">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar cliente…"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-9 w-full h-10 sm:h-9"
-                    />
+              {/* Service History List (moved from Agenda) */}
+              <Card className="shadow-card border border-border">
+                <CardHeader>
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <List className="h-5 w-5 text-primary" />
+                    Histórico de Serviços
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Lista detalhada de todos os agendamentos com filtros e busca.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Filters */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+                      <TabsList className="w-full sm:w-auto">
+                        <TabsTrigger value="all" className="flex-1 sm:flex-none">Todos</TabsTrigger>
+                        <TabsTrigger value="em_aberto" className="flex-1 sm:flex-none">Em Aberto</TabsTrigger>
+                        <TabsTrigger value="pago" className="flex-1 sm:flex-none">Pagos</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    <div className="relative w-full sm:w-64">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar cliente…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9 w-full h-9"
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+
+                  {/* Cobrar button */}
+                  <div className="flex justify-end">
                     <CobrancaDialog
-                      items={items}
+                      items={realItems}
                       trigger={
                         <Button
-                          size="default"
+                          size="sm"
                           variant="outline"
-                          className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto"
+                          className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
                         >
                           <MessageSquare className="h-4 w-4" />
                           <span>Cobrar via WhatsApp</span>
                         </Button>
                       }
                     />
-                    <NovoAgendamentoDialog
-                      trigger={
-                        <Button
-                          size="default"
-                          className="gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 cursor-pointer w-full h-10 px-4 py-2 text-sm sm:h-9 sm:w-auto"
-                        >
-                          <Plus className="h-4 w-4" />
-                          <span>Novo Agendamento</span>
-                        </Button>
-                      }
-                    />
                   </div>
-                </div>
-              </section>
 
-              {/* View Content conditional */}
-              {viewMode === "list" ? (
-                <section className="grid gap-3">
+                  {/* Paginated list */}
                   {isLoading ? (
                     <p className="text-center text-muted-foreground py-12">Carregando…</p>
                   ) : filtered.length === 0 ? (
-                    <Card className="shadow-card">
-                      <CardContent className="py-16 text-center">
-                        <CalendarClock className="h-10 w-10 mx-auto text-muted-foreground" />
-                        <p className="mt-3 font-medium">Nenhum agendamento encontrado</p>
-                        <p className="text-sm text-muted-foreground">
-                          Clique em "Novo Agendamento" para começar.
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <div className="py-12 text-center">
+                      <CalendarClock className="h-10 w-10 mx-auto text-muted-foreground" />
+                      <p className="mt-3 font-medium">Nenhum agendamento encontrado</p>
+                    </div>
                   ) : (
-                    <>
+                    <div className="space-y-3">
                       {paginatedItems.map((a) => (
                         <AgendamentoRow
                           key={a.id}
@@ -707,27 +824,16 @@ function Dashboard() {
                           </Button>
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
-                </section>
-              ) : (
-                <CalendarView
-                  items={filtered}
-                  onToggleStatus={(id, status) => toggle.mutate({ id, status })}
-                  onDeleteAgendamento={(id) => remove.mutate(id)}
-                />
-              )}
+                </CardContent>
+              </Card>
             </div>
-          )}
-
-          {/* TAB 2: Financeiro */}
-          {activeTab === "financeiro" && (
-            <RelatoriosView items={items} />
           )}
 
           {/* TAB 3: Clientes */}
           {activeTab === "clientes" && (
-            <ClientesView items={items} />
+            <ClientesView items={realItems} />
           )}
 
           {/* TAB 4: Configurações */}
@@ -742,7 +848,7 @@ function Dashboard() {
                     Minha Conta
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Gerencie sua foto de perfil e senha.
+                    Gerencie sua foto de perfil, nome e senha.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -765,7 +871,7 @@ function Dashboard() {
                     
                     <div className="text-center sm:text-left space-y-1.5 flex-1">
                       <span className="font-bold text-sm text-foreground block">Foto de Perfil</span>
-                      <span className="text-[10px] text-muted-foreground block">Tamanho recomendado: menor que 600KB.</span>
+                      <span className="text-[10px] text-muted-foreground block">JPG, PNG ou WebP. Máximo 2MB.</span>
                       <div className="flex justify-center sm:justify-start pt-1">
                         <label className="h-8 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors">
                           <Upload className="h-3.5 w-3.5" />
@@ -775,6 +881,26 @@ function Dashboard() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Display Name */}
+                  <form onSubmit={handleSaveName} className="space-y-3 border-t pt-4">
+                    <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <UserCircle className="h-4.5 w-4.5 text-primary" />
+                      Nome de Exibição
+                    </span>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Seu nome..."
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="h-9 text-xs flex-1"
+                      />
+                      <Button type="submit" size="sm" disabled={savingName} className="h-9 cursor-pointer">
+                        {savingName && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                        Salvar
+                      </Button>
+                    </div>
+                  </form>
 
                   {/* Password Reset form */}
                   <form onSubmit={handlePasswordChange} className="space-y-4 border-t pt-4">

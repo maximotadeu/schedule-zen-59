@@ -15,6 +15,7 @@ import {
   addDays,
   subDays,
   isToday,
+  getDay,
   parseISO,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +34,8 @@ import {
   Pencil,
   Camera,
   MoreHorizontal,
+  Palmtree,
+  CircleDot,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,20 +49,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { NovoAgendamentoDialog } from "./NovoAgendamentoDialog";
 import { FotosDialog } from "./FotosDialog";
-import { type Agendamento, type Status, currency } from "@/lib/agendamentos";
+import { type Agendamento, type Status, currency, isFolga } from "@/lib/agendamentos";
 
 interface CalendarViewProps {
   items: Agendamento[];
+  folgas: string[]; // Array of YYYY-MM-DD strings
   onToggleStatus: (id: string, status: Status) => void;
   onDeleteAgendamento: (id: string) => void;
+  onRemoveFolga?: (date: string) => void;
 }
 
 type ViewMode = "mensal" | "semanal" | "quinzenal";
 
-export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: CalendarViewProps) {
+export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendamento, onRemoveFolga }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("mensal");
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+
+  // Filter out folga items from display items
+  const displayItems = useMemo(() => items.filter((a) => !isFolga(a)), [items]);
 
   // Calculate start/end of current interval
   const { start, end } = useMemo(() => {
@@ -124,22 +132,28 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
     return `${startLabel} a ${endLabel}`;
   }, [currentDate, viewMode, start, end]);
 
-  // Group items by date for efficient lookup
+  // Group items by date for efficient lookup (excluding folgas)
   const agendamentosByDate = useMemo(() => {
     const map: Record<string, Agendamento[]> = {};
-    items.forEach((item) => {
+    displayItems.forEach((item) => {
       const dateStr = item.data_servico; // YYYY-MM-DD
       if (!map[dateStr]) map[dateStr] = [];
       map[dateStr].push(item);
     });
     return map;
-  }, [items]);
+  }, [displayItems]);
+
+  // Folgas set for O(1) lookup
+  const folgasSet = useMemo(() => new Set(folgas), [folgas]);
 
   // Agendamentos of selected day
   const selectedDayItems = useMemo(() => {
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     return agendamentosByDate[dateStr] ?? [];
   }, [selectedDate, agendamentosByDate]);
+
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const isSelectedDayFolga = folgasSet.has(selectedDateStr);
 
   return (
     <div className="space-y-6">
@@ -148,13 +162,13 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
         <CardContent className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Navigation */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev} className="h-9 w-9">
+            <Button variant="outline" size="icon" onClick={handlePrev} className="h-9 w-9 cursor-pointer">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={handleToday} className="h-9 font-medium">
+            <Button variant="outline" onClick={handleToday} className="h-9 font-medium cursor-pointer">
               Hoje
             </Button>
-            <Button variant="outline" size="icon" onClick={handleNext} className="h-9 w-9">
+            <Button variant="outline" size="icon" onClick={handleNext} className="h-9 w-9 cursor-pointer">
               <ChevronRight className="h-4 w-4" />
             </Button>
             <h2 className="text-base sm:text-lg font-bold ml-2 truncate w-40 sm:w-auto">
@@ -168,7 +182,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
               variant={viewMode === "mensal" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("mensal")}
-              className={`h-8 font-medium ${viewMode === "mensal" ? "shadow-sm bg-card" : ""}`}
+              className={`h-8 font-medium cursor-pointer ${viewMode === "mensal" ? "shadow-sm bg-card" : ""}`}
             >
               Mensal
             </Button>
@@ -176,7 +190,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
               variant={viewMode === "quinzenal" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("quinzenal")}
-              className={`h-8 font-medium ${viewMode === "quinzenal" ? "shadow-sm bg-card" : ""}`}
+              className={`h-8 font-medium cursor-pointer ${viewMode === "quinzenal" ? "shadow-sm bg-card" : ""}`}
             >
               Quinzenal
             </Button>
@@ -184,7 +198,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
               variant={viewMode === "semanal" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setViewMode("semanal")}
-              className={`h-8 font-medium ${viewMode === "semanal" ? "shadow-sm bg-card" : ""}`}
+              className={`h-8 font-medium cursor-pointer ${viewMode === "semanal" ? "shadow-sm bg-card" : ""}`}
             >
               Semanal
             </Button>
@@ -214,14 +228,32 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
               const isSelected = isSameDay(day, selectedDate);
               const isCurrentMonth = isSameMonth(day, currentDate);
               const currentDayIsToday = isToday(day);
+              const dayOfWeek = getDay(day); // 0=Sun, 6=Sat
+              const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+              const isDayFolga = folgasSet.has(dateStr);
+              const hasAppointments = dayItems.length > 0;
+              const isAvailable = isCurrentMonth && isWeekday && !hasAppointments && !isDayFolga;
+
+              // Build cell classes
+              let cellBg = "bg-card hover:bg-muted/10";
+              let cellBorder = "";
+              if (isDayFolga) {
+                cellBg = "bg-slate-100/80 dark:bg-slate-800/40 hover:bg-slate-200/80 dark:hover:bg-slate-700/40";
+              } else if (isAvailable) {
+                cellBorder = "border-2 border-dashed !border-emerald-400/60";
+              }
+              if (!isCurrentMonth && viewMode === "mensal") {
+                cellBg = "bg-muted/10 text-muted-foreground/50";
+                cellBorder = "";
+              }
 
               return (
                 <div
                   key={idx}
                   onClick={() => setSelectedDate(day)}
-                  className={`min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer bg-card hover:bg-muted/10 ${
+                  className={`min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer ${cellBg} ${cellBorder} ${
                     isSelected ? "ring-2 ring-primary ring-inset z-10" : ""
-                  } ${!isCurrentMonth && viewMode === "mensal" ? "bg-muted/10 text-muted-foreground/50" : ""}`}
+                  }`}
                 >
                   {/* Day Indicator */}
                   <div className="flex items-center justify-between">
@@ -236,7 +268,20 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
                     >
                       {format(day, "d")}
                     </span>
-                    {dayItems.length > 0 && (
+                    {/* Status badges */}
+                    {isDayFolga && isCurrentMonth && (
+                      <Badge variant="secondary" className="text-[8px] sm:text-[9px] px-1 py-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold gap-0.5">
+                        <Palmtree className="h-2.5 w-2.5" />
+                        <span className="hidden sm:inline">Folga</span>
+                      </Badge>
+                    )}
+                    {isAvailable && (
+                      <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 py-0 border-emerald-400/60 text-emerald-600 dark:text-emerald-400 font-bold gap-0.5">
+                        <CircleDot className="h-2.5 w-2.5" />
+                        <span className="hidden sm:inline">Livre</span>
+                      </Badge>
+                    )}
+                    {hasAppointments && !isDayFolga && (
                       <span className="text-[10px] sm:text-xs text-muted-foreground font-medium hidden sm:inline">
                         {dayItems.length} {dayItems.length === 1 ? "serviço" : "serviços"}
                       </span>
@@ -245,6 +290,12 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
 
                   {/* Appointments list inside cell */}
                   <div className="mt-2 space-y-1 overflow-y-auto max-h-[50px] sm:max-h-[80px] custom-scrollbar">
+                    {isDayFolga && isCurrentMonth && !hasAppointments && (
+                      <div className="text-[9px] sm:text-[10px] p-1 rounded border flex items-center gap-1 truncate font-medium bg-slate-200/60 dark:bg-slate-700/60 border-slate-300/50 dark:border-slate-600 text-slate-500 dark:text-slate-400">
+                        <Palmtree className="h-3 w-3 shrink-0" />
+                        <span>Dia de Folga</span>
+                      </div>
+                    )}
                     {dayItems.map((a) => {
                       const isPago = a.status === "pago";
                       const colorClass = isPago
@@ -278,23 +329,47 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
               {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
             </CardTitle>
             <CardDescription>
-              {selectedDayItems.length === 0
+              {isSelectedDayFolga
+                ? "Este dia está marcado como Folga."
+                : selectedDayItems.length === 0
                 ? "Nenhum agendamento marcado para esta data."
                 : `${selectedDayItems.length} ${selectedDayItems.length === 1 ? "agendamento cadastrado" : "agendamentos cadastrados"}.`}
             </CardDescription>
           </div>
-          <NovoAgendamentoDialog
-            defaultDate={format(selectedDate, "yyyy-MM-dd")}
-            trigger={
-              <Button size="sm" className="gradient-primary text-primary-foreground shadow-elevated">
-                <Plus className="h-4 w-4" />
-                Agendar
+          <div className="flex items-center gap-2">
+            {isSelectedDayFolga && onRemoveFolga ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-slate-600 border-slate-300 hover:bg-slate-100 cursor-pointer"
+                onClick={() => onRemoveFolga(selectedDateStr)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remover Folga
               </Button>
-            }
-          />
+            ) : (
+              <NovoAgendamentoDialog
+                defaultDate={format(selectedDate, "yyyy-MM-dd")}
+                trigger={
+                  <Button size="sm" className="gradient-primary text-primary-foreground shadow-elevated cursor-pointer">
+                    <Plus className="h-4 w-4" />
+                    Agendar
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
-          {selectedDayItems.length === 0 ? (
+          {isSelectedDayFolga && selectedDayItems.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+              <Palmtree className="h-10 w-10 text-slate-400" />
+              <p className="text-sm font-medium text-slate-500">Dia de folga — sem atendimentos.</p>
+              <p className="text-xs text-slate-400">
+                Clique em "Remover Folga" para liberar este dia.
+              </p>
+            </div>
+          ) : selectedDayItems.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
               <AlertCircle className="h-8 w-8 text-muted-foreground/60" />
               <p className="text-sm">Clique em "Agendar" acima para adicionar um serviço neste dia.</p>
@@ -363,7 +438,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
                             variant="outline"
                             size="sm"
                             onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
-                            className={`gap-1.5 h-8 font-medium ${
+                            className={`gap-1.5 h-8 font-medium cursor-pointer ${
                               isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
                             }`}
                           >
@@ -416,7 +491,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
                                 onDeleteAgendamento(a.id);
                               }
                             }}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0 cursor-pointer"
                             title="Excluir agendamento"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -429,7 +504,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
                             variant="outline"
                             size="sm"
                             onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
-                            className={`h-8 w-8 p-0 ${
+                            className={`h-8 w-8 p-0 cursor-pointer ${
                               isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
                             }`}
                           >
@@ -442,7 +517,7 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

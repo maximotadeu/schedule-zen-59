@@ -203,5 +203,96 @@ export async function deleteAgendamento(id: string) {
   if (error) throw error;
 }
 
+// ── Folga (Day Off) helpers ──────────────────────────────────────────
+
+export const FOLGA_MARKER = "__FOLGA__";
+
+export function isFolga(a: Agendamento): boolean {
+  return a.cliente === FOLGA_MARKER;
+}
+
+export async function listFolgas(): Promise<string[]> {
+  if (isDevMode()) {
+    const list = getLocalAgendamentos();
+    return list.filter(isFolga).map((a) => a.data_servico);
+  }
+  const { data, error } = await supabase
+    .from("agendamentos")
+    .select("data_servico")
+    .eq("cliente", FOLGA_MARKER);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => r.data_servico);
+}
+
+export async function createFolga(data_servico: string) {
+  if (isDevMode()) {
+    const list = getLocalAgendamentos();
+    // Prevent duplicate folga on same date
+    if (list.some((a) => isFolga(a) && a.data_servico === data_servico)) return;
+    const novo: Agendamento = {
+      id: "local-folga-" + Math.random().toString(36).substring(2, 11),
+      user_id: "mock-user-id",
+      cliente: FOLGA_MARKER,
+      data_servico,
+      hora_inicio: "00:00:00",
+      hora_fim: "23:59:00",
+      descricao: "Folga",
+      valor: 0,
+      status: "em_aberto",
+      data_pagamento: null,
+      servicos_adicionais: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    list.push(novo);
+    saveLocalAgendamentos(list);
+    return;
+  }
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new Error("Não autenticado");
+  const grupo = await getGrupo();
+
+  // Prevent duplicate
+  const { data: existing } = await supabase
+    .from("agendamentos")
+    .select("id")
+    .eq("cliente", FOLGA_MARKER)
+    .eq("data_servico", data_servico)
+    .maybeSingle();
+  if (existing) return;
+
+  const { error } = await supabase.from("agendamentos").insert({
+    cliente: FOLGA_MARKER,
+    data_servico,
+    hora_inicio: "00:00:00",
+    hora_fim: "23:59:00",
+    descricao: "Folga",
+    valor: 0,
+    status: "em_aberto",
+    servicos_adicionais: [],
+    user_id: userData.user.id,
+    grupo_id: grupo ? grupo.id : null,
+  } as any);
+  if (error) throw error;
+}
+
+export async function deleteFolga(data_servico: string) {
+  if (isDevMode()) {
+    const list = getLocalAgendamentos();
+    const filtered = list.filter(
+      (a) => !(isFolga(a) && a.data_servico === data_servico)
+    );
+    saveLocalAgendamentos(filtered);
+    return;
+  }
+  const { error } = await supabase
+    .from("agendamentos")
+    .delete()
+    .eq("cliente", FOLGA_MARKER)
+    .eq("data_servico", data_servico);
+  if (error) throw error;
+}
+
 export const currency = (v: number) =>
   v.toLocaleString("en-US", { style: "currency", currency: "USD" });
