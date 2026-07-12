@@ -21,6 +21,7 @@ export type Database = {
           data_pagamento: string | null
           data_servico: string
           descricao: string | null
+          grupo_id: string | null
           hora_fim: string
           hora_inicio: string
           id: string
@@ -36,6 +37,7 @@ export type Database = {
           data_pagamento?: string | null
           data_servico: string
           descricao?: string | null
+          grupo_id?: string | null
           hora_fim: string
           hora_inicio: string
           id?: string
@@ -51,6 +53,7 @@ export type Database = {
           data_pagamento?: string | null
           data_servico?: string
           descricao?: string | null
+          grupo_id?: string | null
           hora_fim?: string
           hora_inicio?: string
           id?: string
@@ -60,6 +63,67 @@ export type Database = {
           user_id?: string
           valor?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupo_membros: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_membros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          codigo_convite: string
+          created_at: string
+          dono_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          codigo_convite: string
+          created_at?: string
+          dono_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          codigo_convite?: string
+          created_at?: string
+          dono_id?: string
+          id?: string
+          nome?: string
+        }
         Relationships: []
       }
     }
@@ -67,7 +131,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_grupo_ids: { Args: { _user_id: string }; Returns: string[] }
+      is_grupo_membro: {
+        Args: { _grupo_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
