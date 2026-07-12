@@ -44,6 +44,8 @@ import {
   Pencil,
   Camera,
   MoreHorizontal,
+  Plus,
+  MessageSquare,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -177,8 +179,8 @@ function Dashboard() {
               </TabsList>
             </Tabs>
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:flex sm:justify-end">
-            <div className="relative min-w-0 sm:w-64">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full">
+            <div className="relative w-full sm:w-72">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente…"
@@ -187,8 +189,34 @@ function Dashboard() {
                 className="pl-9 w-full"
               />
             </div>
-            <CobrancaDialog items={items} />
-            <NovoAgendamentoDialog />
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+              <CobrancaDialog
+                items={items}
+                trigger={
+                  <Button
+                    size="default"
+                    variant="outline"
+                    className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer w-full h-10 px-3 py-2 text-sm sm:h-9 sm:w-auto"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Cobrar</span>
+                    <span className="hidden xs:inline">via WhatsApp</span>
+                  </Button>
+                }
+              />
+              <NovoAgendamentoDialog
+                trigger={
+                  <Button
+                    size="default"
+                    className="gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 cursor-pointer w-full h-10 px-3 py-2 text-sm sm:h-9 sm:w-auto"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Novo</span>
+                    <span className="hidden xs:inline">Agendamento</span>
+                  </Button>
+                }
+              />
+            </div>
           </div>
         </section>
 
@@ -372,8 +400,8 @@ function AgendamentoRow({
                   <Undo2 className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => onToggle("pago")} className="h-8 px-2 bg-success text-success-foreground hover:bg-success/90">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
+                <Button size="sm" onClick={() => onToggle("pago")} className="h-8 w-8 p-0 bg-success text-success-foreground hover:bg-success/90">
+                  <CheckCircle2 className="h-4 w-4" />
                 </Button>
               )}
 
