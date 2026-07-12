@@ -32,7 +32,15 @@ import {
   AlertCircle,
   Pencil,
   Camera,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -349,68 +357,129 @@ export function CalendarView({ items, onToggleStatus, onDeleteAgendamento }: Cal
 
                       {/* Right: Actions */}
                       <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
-                          className={`gap-1.5 h-8 font-medium ${
-                            isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
-                          }`}
-                        >
-                          {isPago ? (
-                            <>
-                              <Undo2 className="h-4 w-4" />
-                              Reabrir
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="h-4 w-4" />
-                              Receber
-                            </>
-                          )}
-                        </Button>
+                        {/* Desktop buttons (visible from sm upwards) */}
+                        <div className="hidden sm:flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
+                            className={`gap-1.5 h-8 font-medium ${
+                              isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
+                            }`}
+                          >
+                            {isPago ? (
+                              <>
+                                <Undo2 className="h-4 w-4" />
+                                Reabrir
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-4 w-4" />
+                                Receber
+                              </>
+                            )}
+                          </Button>
 
-                        <NovoAgendamentoDialog
-                          agendamento={a}
-                          trigger={
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 h-8 font-medium hover:text-primary hover:bg-primary/5 cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Editar
-                            </Button>
-                          }
-                        />
-
-                        <FotosDialog
-                          agendamento={a}
-                          trigger={
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 h-8 font-medium hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
-                            >
-                              <Camera className="h-3.5 w-3.5 text-blue-500" />
-                              Fotos
-                            </Button>
-                          }
-                        />
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm(`Deseja excluir o agendamento de ${a.cliente}?`)) {
-                              onDeleteAgendamento(a.id);
+                          <NovoAgendamentoDialog
+                            agendamento={a}
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 h-8 font-medium hover:text-primary hover:bg-primary/5 cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Editar
+                              </Button>
                             }
-                          }}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                          title="Excluir agendamento"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          />
+
+                          <FotosDialog
+                            agendamento={a}
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 h-8 font-medium hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
+                              >
+                                <Camera className="h-3.5 w-3.5 text-blue-500" />
+                                Fotos
+                              </Button>
+                            }
+                          />
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm(`Deseja excluir o agendamento de ${a.cliente}?`)) {
+                                onDeleteAgendamento(a.id);
+                              }
+                            }}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            title="Excluir agendamento"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Mobile dropdown buttons (visible on mobile only) */}
+                        <div className="flex sm:hidden items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
+                            className={`h-8 w-8 p-0 ${
+                              isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
+                            }`}
+                          >
+                            {isPago ? (
+                              <Undo2 className="h-4 w-4" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <NovoAgendamentoDialog
+                                agendamento={a}
+                                trigger={
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                                    <Pencil className="h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                }
+                              />
+                              <FotosDialog
+                                agendamento={a}
+                                trigger={
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                                    <Camera className="h-4 w-4 text-blue-500" />
+                                    Fotos
+                                  </DropdownMenuItem>
+                                }
+                              />
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (confirm(`Deseja excluir o agendamento de ${a.cliente}?`)) {
+                                    onDeleteAgendamento(a.id);
+                                  }
+                                }}
+                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

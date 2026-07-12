@@ -18,6 +18,13 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { CalendarView } from "@/components/CalendarView";
 import { CobrancaDialog } from "@/components/CobrancaDialog";
 import { FotosDialog } from "@/components/FotosDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   CalendarClock,
@@ -35,6 +42,7 @@ import {
   List,
   Pencil,
   Camera,
+  MoreHorizontal,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -143,13 +151,13 @@ function Dashboard() {
         </section>
 
         {/* Toolbar */}
-        <section className="grid gap-3 sm:flex sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-              <TabsList>
-                <TabsTrigger value="all">Todos</TabsTrigger>
-                <TabsTrigger value="em_aberto">Em Aberto</TabsTrigger>
-                <TabsTrigger value="pago">Pagos</TabsTrigger>
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="flex-1 min-w-0">
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="all" className="flex-1 sm:flex-none">Todos</TabsTrigger>
+                <TabsTrigger value="em_aberto" className="flex-1 sm:flex-none">Em Aberto</TabsTrigger>
+                <TabsTrigger value="pago" className="flex-1 sm:flex-none">Pagos</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -157,23 +165,24 @@ function Dashboard() {
               <TabsList>
                 <TabsTrigger value="list" className="flex items-center gap-1.5">
                   <List className="h-4 w-4" />
-                  Lista
+                  <span className="hidden xs:inline">Lista</span>
                 </TabsTrigger>
                 <TabsTrigger value="calendar" className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
-                  Calendário
+                  <span className="hidden xs:inline">Calendário</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-64">
+
+          <div className="flex items-center gap-2 w-full">
+            <div className="relative flex-1">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 w-full"
               />
             </div>
             <CobrancaDialog items={items} />
@@ -268,9 +277,10 @@ function AgendamentoRow({
   const dateLabel = format(parseISO(a.data_servico), "EEE, dd MMM yyyy", { locale: ptBR });
   return (
     <Card className="shadow-card hover:shadow-elevated transition-shadow">
-      <CardContent className="p-4 sm:p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 items-start">
-          <div className="min-w-0 space-y-2">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          {/* Left: Info */}
+          <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold text-base truncate">{a.cliente}</h3>
               {isPago ? (
@@ -281,24 +291,24 @@ function AgendamentoRow({
                 </Badge>
               )}
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarClock className="h-3.5 w-3.5" />
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <CalendarClock className="h-3 w-3" />
                 {dateLabel}
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" />
                 {a.hora_inicio.slice(0, 5)} – {a.hora_fim.slice(0, 5)}
               </span>
               {a.descricao && (
-                <span className="inline-flex items-center gap-1.5 min-w-0">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="inline-flex items-center gap-1 min-w-0">
+                  <MapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">{a.descricao}</span>
                 </span>
               )}
             </div>
             {a.servicos_adicionais && a.servicos_adicionais.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1">
                 {a.servicos_adicionais.map((s) => (
                   <Badge key={s} variant="secondary" className="text-xs font-normal">
                     {s}
@@ -313,53 +323,93 @@ function AgendamentoRow({
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <span className="text-lg sm:text-xl font-bold">{currency(Number(a.valor))}</span>
-            <div className="flex items-center gap-1">
+          {/* Right: Price + Actions */}
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span className="text-base sm:text-xl font-bold">{currency(Number(a.valor))}</span>
+
+            {/* Desktop actions — full buttons */}
+            <div className="hidden sm:flex items-center gap-1">
               {isPago ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onToggle("em_aberto")}
-                  title="Reverter para Em Aberto"
-                >
+                <Button size="sm" variant="ghost" onClick={() => onToggle("em_aberto")} title="Reverter para Em Aberto">
                   <Undo2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Reverter</span>
+                  Reverter
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  onClick={() => onToggle("pago")}
-                  className="bg-success text-success-foreground hover:bg-success/90"
-                >
+                <Button size="sm" onClick={() => onToggle("pago")} className="bg-success text-success-foreground hover:bg-success/90">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Marcar Pago</span>
+                  Marcar Pago
                 </Button>
               )}
-
               <NovoAgendamentoDialog
                 agendamento={a}
                 trigger={
                   <Button size="sm" variant="ghost" title="Editar" className="cursor-pointer">
-                    <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                    <span className="hidden sm:inline">Editar</span>
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                    Editar
                   </Button>
                 }
               />
-
               <FotosDialog
                 agendamento={a}
                 trigger={
-                  <Button size="sm" variant="ghost" title="Enviar fotos" className="cursor-pointer">
+                  <Button size="sm" variant="ghost" title="Fotos" className="cursor-pointer">
                     <Camera className="h-4 w-4 text-blue-500" />
-                    <span className="hidden sm:inline">Fotos</span>
+                    Fotos
                   </Button>
                 }
               />
-
               <Button size="sm" variant="ghost" onClick={onDelete} title="Excluir">
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
+            </div>
+
+            {/* Mobile actions — dropdown */}
+            <div className="flex sm:hidden items-center gap-1">
+              {isPago ? (
+                <Button size="sm" variant="ghost" onClick={() => onToggle("em_aberto")} className="h-8 w-8 p-0">
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => onToggle("pago")} className="h-8 px-2 bg-success text-success-foreground hover:bg-success/90">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <NovoAgendamentoDialog
+                    agendamento={a}
+                    trigger={
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                        <Pencil className="h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                    }
+                  />
+                  <FotosDialog
+                    agendamento={a}
+                    trigger={
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                        <Camera className="h-4 w-4 text-blue-500" />
+                        Fotos
+                      </DropdownMenuItem>
+                    }
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

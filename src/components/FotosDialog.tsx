@@ -106,7 +106,9 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
     // clean up blob URLs
     photos.forEach((p) => URL.revokeObjectURL(p.url));
     setPhotos([]);
-    setMessage(`${getGreeting()}!\nSegue as fotos de hoje!\nObrigado!`);
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+    setMessage(`${greeting}!\nSegue as fotos de hoje!\nObrigado!`);
     setCopied(false);
     setOpen(false);
   };
