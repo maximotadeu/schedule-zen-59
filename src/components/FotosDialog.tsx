@@ -1,4 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+}
+
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -39,13 +45,14 @@ interface PhotoPreview {
 export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
   const [open, setOpen] = useState(false);
   const [photos, setPhotos] = useState<PhotoPreview[]>([]);
-  const [message, setMessage] = useState<string>(() => {
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-    return `${greeting}!\nSegue as fotos de hoje!\nObrigado!`;
-  });
+  const [message, setMessage] = useState<string>(`Olá!\nSegue as fotos de hoje!\nObrigado!`);
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMessage(`${getGreeting()}!\nSegue as fotos de hoje!\nObrigado!`);
+  }, []);
+
 
   const dateLabel = (() => {
     try {
