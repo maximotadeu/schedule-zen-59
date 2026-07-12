@@ -1,4 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+}
+
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
