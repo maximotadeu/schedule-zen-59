@@ -151,9 +151,15 @@ function Dashboard() {
         </section>
 
         {/* Toolbar */}
+<<<<<<< HEAD
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="flex-1 min-w-0">
+=======
+        <section className="grid gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)} className="col-span-2 sm:col-auto">
+>>>>>>> origin/main
               <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="all" className="flex-1 sm:flex-none">Todos</TabsTrigger>
                 <TabsTrigger value="em_aberto" className="flex-1 sm:flex-none">Em Aberto</TabsTrigger>
@@ -161,22 +167,27 @@ function Dashboard() {
               </TabsList>
             </Tabs>
 
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "calendar")}>
-              <TabsList>
-                <TabsTrigger value="list" className="flex items-center gap-1.5">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "calendar")} className="col-span-2 sm:col-auto">
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="list" className="flex-1 sm:flex-none flex items-center gap-1.5">
                   <List className="h-4 w-4" />
                   <span className="hidden xs:inline">Lista</span>
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="flex items-center gap-1.5">
+                <TabsTrigger value="calendar" className="flex-1 sm:flex-none flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" />
                   <span className="hidden xs:inline">Calendário</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
+<<<<<<< HEAD
 
           <div className="flex items-center gap-2 w-full">
             <div className="relative flex-1">
+=======
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:flex sm:justify-end">
+            <div className="relative min-w-0 sm:w-64">
+>>>>>>> origin/main
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar cliente…"
@@ -277,12 +288,12 @@ function AgendamentoRow({
   const dateLabel = format(parseISO(a.data_servico), "EEE, dd MMM yyyy", { locale: ptBR });
   return (
     <Card className="shadow-card hover:shadow-elevated transition-shadow">
-      <CardContent className="p-4">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           {/* Left: Info */}
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold text-base truncate">{a.cliente}</h3>
+              <h3 className="font-semibold text-base break-words">{a.cliente}</h3>
               {isPago ? (
                 <Badge className="bg-success text-success-foreground hover:bg-success">Pago</Badge>
               ) : (
@@ -417,3 +428,4 @@ function AgendamentoRow({
     </Card>
   );
 }
+
