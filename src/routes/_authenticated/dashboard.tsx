@@ -18,6 +18,7 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { CalendarView } from "@/components/CalendarView";
 import { CobrancaDialog } from "@/components/CobrancaDialog";
 import { FotosDialog } from "@/components/FotosDialog";
+import { GrupoSetup } from "@/components/GrupoSetup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,6 +129,8 @@ function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        <GrupoSetup onGroupChange={() => qc.invalidateQueries({ queryKey: ["agendamentos"] })} />
+
         {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard

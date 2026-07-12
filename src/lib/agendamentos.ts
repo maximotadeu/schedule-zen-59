@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getGrupo } from "./grupos";
 
 export type Status = "em_aberto" | "pago";
 
@@ -136,10 +137,12 @@ export async function createAgendamento(input: NovoAgendamento) {
   }
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Não autenticado");
+  const grupo = await getGrupo();
   const { error } = await supabase.from("agendamentos").insert({
     ...input,
     user_id: userData.user.id,
-  });
+    grupo_id: grupo ? grupo.id : null,
+  } as any);
   if (error) throw error;
 }
 
