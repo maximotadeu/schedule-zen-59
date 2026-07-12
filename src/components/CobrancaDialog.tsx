@@ -40,14 +40,24 @@ const SERVICOS_ADICIONAIS_MAP: Record<string, { label: string; preco: number }> 
 
 function getAdditionalServiceInfo(serviceName: string): { label: string; preco: number } {
   const normalized = serviceName.trim();
+  
+  // Try matching "Name ($Price)" or "Name ($Price.xx)"
+  const priceMatch = normalized.match(/^(.*?)\s*\(\$?([\d.,]+)\)$/);
+  if (priceMatch) {
+    const label = priceMatch[1].trim();
+    const preco = Number(priceMatch[2].replace(",", "."));
+    return { label, preco };
+  }
+
   if (SERVICOS_ADICIONAIS_MAP[normalized]) {
     return SERVICOS_ADICIONAIS_MAP[normalized];
   }
+  
   const match = normalized.match(/\$?(\d+)/);
   if (match) {
     return { label: normalized, preco: Number(match[1]) };
   }
-  return { label: normalized, preco: 15 }; // default fallback price
+  return { label: normalized, preco: 15 };
 }
 
 interface CobrancaDialogProps {
