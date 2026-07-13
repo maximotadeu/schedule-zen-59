@@ -43,15 +43,21 @@ export function MarcarFolgaDialog({ defaultDate, trigger, onSuccess }: MarcarFol
       setOpen(false);
       setDataFolga("");
       onSuccess?.();
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao marcar folga.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao marcar folga.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v && defaultDate) setDataFolga(defaultDate); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v && defaultDate) setDataFolga(defaultDate);
+      }}
+    >
       {trigger ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : (
@@ -69,7 +75,8 @@ export function MarcarFolgaDialog({ defaultDate, trigger, onSuccess }: MarcarFol
           </div>
           <DialogTitle className="text-center">Marcar Folga</DialogTitle>
           <DialogDescription className="text-center text-xs">
-            Escolha a data em que não haverá atendimentos. O dia será indicado visualmente no calendário.
+            Escolha a data em que não haverá atendimentos. O dia será indicado visualmente no
+            calendário.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -85,10 +92,19 @@ export function MarcarFolgaDialog({ defaultDate, trigger, onSuccess }: MarcarFol
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="ghost" className="cursor-pointer" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={() => setOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white"
+            >
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
               Confirmar Folga
             </Button>

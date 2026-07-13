@@ -61,7 +61,13 @@ interface CalendarViewProps {
 
 type ViewMode = "mensal" | "semanal" | "quinzenal";
 
-export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendamento, onRemoveFolga }: CalendarViewProps) {
+export function CalendarView({
+  items,
+  folgas,
+  onToggleStatus,
+  onDeleteAgendamento,
+  onRemoveFolga,
+}: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("mensal");
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
@@ -162,13 +168,30 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
         <CardContent className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Navigation */}
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePrev} className="h-9 w-9 cursor-pointer">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrev}
+              className="h-9 w-9 cursor-pointer"
+              aria-label="Período anterior"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={handleToday} className="h-9 font-medium cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={handleToday}
+              className="h-9 font-medium cursor-pointer"
+              aria-label="Ir para hoje"
+            >
               Hoje
             </Button>
-            <Button variant="outline" size="icon" onClick={handleNext} className="h-9 w-9 cursor-pointer">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNext}
+              className="h-9 w-9 cursor-pointer"
+              aria-label="Próximo período"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <h2 className="text-base sm:text-lg font-bold ml-2 truncate w-40 sm:w-auto">
@@ -221,7 +244,11 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
           </div>
 
           {/* Days Cells */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-border bg-border/20">
+          <div
+            className="grid grid-cols-7 divide-x divide-y divide-border bg-border/20"
+            role="grid"
+            aria-label="Calendário de agendamentos"
+          >
             {days.map((day, idx) => {
               const dateStr = format(day, "yyyy-MM-dd");
               const dayItems = agendamentosByDate[dateStr] ?? [];
@@ -238,7 +265,8 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
               let cellBg = "bg-card hover:bg-muted/10";
               let cellBorder = "";
               if (isDayFolga) {
-                cellBg = "bg-slate-100/80 dark:bg-slate-800/40 hover:bg-slate-200/80 dark:hover:bg-slate-700/40";
+                cellBg =
+                  "bg-slate-100/80 dark:bg-slate-800/40 hover:bg-slate-200/80 dark:hover:bg-slate-700/40";
               } else if (isAvailable) {
                 cellBorder = "border-2 border-dashed !border-emerald-400/60";
               }
@@ -250,6 +278,8 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
               return (
                 <div
                   key={idx}
+                  role="gridcell"
+                  aria-label={`${format(day, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}${isDayFolga ? ", folga" : ""}${hasAppointments ? `, ${dayItems.length} agendamento${dayItems.length > 1 ? "s" : ""}` : ""}`}
                   onClick={() => setSelectedDate(day)}
                   className={`min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2.5 flex flex-col justify-between transition-colors cursor-pointer ${cellBg} ${cellBorder} ${
                     isSelected ? "ring-2 ring-primary ring-inset z-10" : ""
@@ -262,21 +292,27 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                         currentDayIsToday
                           ? "bg-primary text-primary-foreground font-bold shadow-sm"
                           : isSelected
-                          ? "text-primary"
-                          : ""
+                            ? "text-primary"
+                            : ""
                       }`}
                     >
                       {format(day, "d")}
                     </span>
                     {/* Status badges */}
                     {isDayFolga && isCurrentMonth && (
-                      <Badge variant="secondary" className="text-[8px] sm:text-[9px] px-1 py-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold gap-0.5">
+                      <Badge
+                        variant="secondary"
+                        className="text-[8px] sm:text-[9px] px-1 py-0 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold gap-0.5"
+                      >
                         <Palmtree className="h-2.5 w-2.5" />
                         <span className="hidden sm:inline">Folga</span>
                       </Badge>
                     )}
                     {isAvailable && (
-                      <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 py-0 border-emerald-400/60 text-emerald-600 dark:text-emerald-400 font-bold gap-0.5">
+                      <Badge
+                        variant="outline"
+                        className="text-[8px] sm:text-[9px] px-1 py-0 border-emerald-400/60 text-emerald-600 dark:text-emerald-400 font-bold gap-0.5"
+                      >
                         <CircleDot className="h-2.5 w-2.5" />
                         <span className="hidden sm:inline">Livre</span>
                       </Badge>
@@ -308,7 +344,9 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                           className={`text-[9px] sm:text-[10px] p-1 rounded border flex items-center gap-1 truncate font-medium ${colorClass}`}
                           title={`${a.hora_inicio.slice(0, 5)} - ${a.cliente}`}
                         >
-                          <span className="font-semibold shrink-0">{a.hora_inicio.slice(0, 5)}</span>
+                          <span className="font-semibold shrink-0">
+                            {a.hora_inicio.slice(0, 5)}
+                          </span>
                           <span className="truncate">{a.cliente}</span>
                         </div>
                       );
@@ -326,14 +364,17 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
         <CardHeader className="pb-3 border-b flex flex-row items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="text-lg">
-              {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
+              {format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR }).replace(
+                /^\w/,
+                (c) => c.toUpperCase(),
+              )}
             </CardTitle>
             <CardDescription>
               {isSelectedDayFolga
                 ? "Este dia está marcado como Folga."
                 : selectedDayItems.length === 0
-                ? "Nenhum agendamento marcado para esta data."
-                : `${selectedDayItems.length} ${selectedDayItems.length === 1 ? "agendamento cadastrado" : "agendamentos cadastrados"}.`}
+                  ? "Nenhum agendamento marcado para esta data."
+                  : `${selectedDayItems.length} ${selectedDayItems.length === 1 ? "agendamento cadastrado" : "agendamentos cadastrados"}.`}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -351,7 +392,10 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
               <NovoAgendamentoDialog
                 defaultDate={format(selectedDate, "yyyy-MM-dd")}
                 trigger={
-                  <Button size="sm" className="gradient-primary text-primary-foreground shadow-elevated cursor-pointer">
+                  <Button
+                    size="sm"
+                    className="gradient-primary text-primary-foreground shadow-elevated cursor-pointer"
+                  >
                     <Plus className="h-4 w-4" />
                     Agendar
                   </Button>
@@ -372,7 +416,9 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
           ) : selectedDayItems.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
               <AlertCircle className="h-8 w-8 text-muted-foreground/60" />
-              <p className="text-sm">Clique em "Agendar" acima para adicionar um serviço neste dia.</p>
+              <p className="text-sm">
+                Clique em "Agendar" acima para adicionar um serviço neste dia.
+              </p>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -422,7 +468,11 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                         {a.servicos_adicionais && a.servicos_adicionais.length > 0 && (
                           <div className="flex flex-wrap gap-1 pt-1">
                             {a.servicos_adicionais.map((s, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-[10px] px-2 py-0">
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="text-[10px] px-2 py-0"
+                              >
                                 {s}
                               </Badge>
                             ))}
@@ -439,7 +489,9 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                             size="sm"
                             onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
                             className={`gap-1.5 h-8 font-medium cursor-pointer ${
-                              isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
+                              isPago
+                                ? "hover:text-amber-600 hover:bg-amber-50"
+                                : "hover:text-green-600 hover:bg-green-50"
                             }`}
                           >
                             {isPago ? (
@@ -505,7 +557,9 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                             size="sm"
                             onClick={() => onToggleStatus(a.id, isPago ? "em_aberto" : "pago")}
                             className={`h-8 w-8 p-0 cursor-pointer ${
-                              isPago ? "hover:text-amber-600 hover:bg-amber-50" : "hover:text-green-600 hover:bg-green-50"
+                              isPago
+                                ? "hover:text-amber-600 hover:bg-amber-50"
+                                : "hover:text-green-600 hover:bg-green-50"
                             }`}
                           >
                             {isPago ? (
@@ -517,7 +571,11 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 cursor-pointer"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -525,7 +583,10 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                               <NovoAgendamentoDialog
                                 agendamento={a}
                                 trigger={
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="cursor-pointer gap-2"
+                                  >
                                     <Pencil className="h-4 w-4" />
                                     Editar
                                   </DropdownMenuItem>
@@ -534,7 +595,10 @@ export function CalendarView({ items, folgas, onToggleStatus, onDeleteAgendament
                               <FotosDialog
                                 agendamento={a}
                                 trigger={
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="cursor-pointer gap-2"
+                                  >
                                     <Camera className="h-4 w-4 text-blue-500" />
                                     Fotos
                                   </DropdownMenuItem>

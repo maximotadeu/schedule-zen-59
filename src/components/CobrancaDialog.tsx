@@ -27,38 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { type Agendamento } from "@/lib/agendamentos";
 import { toast } from "sonner";
-
-const SERVICOS_ADICIONAIS_MAP: Record<string, { label: string; preco: number }> = {
-  "BBQ cleaning": { label: "Churrasqueira", preco: 15 },
-  "Churrasqueira": { label: "Churrasqueira", preco: 15 },
-  "Window cleaning": { label: "Janelas", preco: 30 },
-  "Janelas": { label: "Janelas", preco: 30 },
-  "Pressure wash": { label: "Pressure wash", preco: 50 },
-  "Lawn mowing": { label: "Jardim", preco: 40 },
-  "Handyman": { label: "Manutenção", preco: 50 },
-};
-
-function getAdditionalServiceInfo(serviceName: string): { label: string; preco: number } {
-  const normalized = serviceName.trim();
-  
-  // Try matching "Name ($Price)" or "Name ($Price.xx)"
-  const priceMatch = normalized.match(/^(.*?)\s*\(\$?([\d.,]+)\)$/);
-  if (priceMatch) {
-    const label = priceMatch[1].trim();
-    const preco = Number(priceMatch[2].replace(",", "."));
-    return { label, preco };
-  }
-
-  if (SERVICOS_ADICIONAIS_MAP[normalized]) {
-    return SERVICOS_ADICIONAIS_MAP[normalized];
-  }
-  
-  const match = normalized.match(/\$?(\d+)/);
-  if (match) {
-    return { label: normalized, preco: Number(match[1]) };
-  }
-  return { label: normalized, preco: 15 };
-}
+import { getAdditionalServiceInfo } from "@/lib/services-utils";
 
 interface CobrancaDialogProps {
   items: Agendamento[];
@@ -140,7 +109,7 @@ export function CobrancaDialog({ items, trigger, defaultClient }: CobrancaDialog
         const parts = item.data_servico.split("-");
         dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}` : item.data_servico;
       }
-      
+
       lines.push(`${label} ${dateStr} - $${item.valor}`);
       total += Number(item.valor);
 
@@ -202,7 +171,11 @@ Obrigado`;
         <DialogTrigger asChild>{trigger}</DialogTrigger>
       ) : (
         <DialogTrigger asChild>
-          <Button size="lg" variant="outline" className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer">
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2 border-green-500/30 text-green-600 hover:text-green-700 hover:bg-green-50 cursor-pointer"
+          >
             <MessageSquare className="h-5 w-5" />
             Cobrar via WhatsApp
           </Button>
@@ -215,7 +188,8 @@ Obrigado`;
             Gerar Cobrança WhatsApp
           </DialogTitle>
           <DialogDescription>
-            Selecione o cliente e os agendamentos desejados para gerar a mensagem formatada de cobrança.
+            Selecione o cliente e os agendamentos desejados para gerar a mensagem formatada de
+            cobrança.
           </DialogDescription>
         </DialogHeader>
 
@@ -306,7 +280,9 @@ Obrigado`;
                             <Badge
                               variant="outline"
                               className={`text-[9px] px-1 py-0 ${
-                                isPago ? "border-success text-success bg-success/5" : "border-warning text-amber-600 bg-warning/5"
+                                isPago
+                                  ? "border-success text-success bg-success/5"
+                                  : "border-warning text-amber-600 bg-warning/5"
                               }`}
                             >
                               {isPago ? "Pago" : "Em aberto"}
@@ -323,20 +299,25 @@ Obrigado`;
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="preview-textarea">4. Pré-visualização da Mensagem</Label>
-                  <span className="text-[10px] text-muted-foreground">(Você pode editar o texto abaixo)</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    (Você pode editar o texto abaixo)
+                  </span>
                 </div>
                 <Textarea
                   id="preview-textarea"
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   className="font-mono text-xs h-[260px] leading-relaxed resize-none bg-muted/10 border-border"
+                  aria-label="Pré-visualização da mensagem de cobrança"
                 />
               </div>
             </div>
           ) : (
             <div className="py-12 border border-dashed rounded-lg text-center text-muted-foreground flex flex-col items-center justify-center gap-2 bg-muted/5">
               <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm">Por favor, selecione um cliente no menu acima para listar seus serviços.</p>
+              <p className="text-sm">
+                Por favor, selecione um cliente no menu acima para listar seus serviços.
+              </p>
             </div>
           )}
         </div>

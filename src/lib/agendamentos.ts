@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { getGrupo } from "./grupos";
 
 export type Status = "em_aberto" | "pago";
@@ -43,7 +44,7 @@ const DEFAULT_MOCK_AGENDAMENTOS: Agendamento[] = [
     hora_inicio: "09:00:00",
     hora_fim: "10:00:00",
     descricao: "Corte de cabelo e barba",
-    valor: 50.00,
+    valor: 50.0,
     status: "em_aberto",
     data_pagamento: null,
     servicos_adicionais: ["Barba"],
@@ -58,7 +59,7 @@ const DEFAULT_MOCK_AGENDAMENTOS: Agendamento[] = [
     hora_inicio: "11:00:00",
     hora_fim: "12:00:00",
     descricao: "Penteado e maquiagem",
-    valor: 150.00,
+    valor: 150.0,
     status: "pago",
     data_pagamento: new Date().toISOString(),
     servicos_adicionais: ["Maquiagem"],
@@ -73,13 +74,13 @@ const DEFAULT_MOCK_AGENDAMENTOS: Agendamento[] = [
     hora_inicio: "14:00:00",
     hora_fim: "15:00:00",
     descricao: "Manicure",
-    valor: 30.00,
+    valor: 30.0,
     status: "em_aberto",
     data_pagamento: null,
     servicos_adicionais: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }
+  },
 ];
 
 function getLocalAgendamentos(): Agendamento[] {
@@ -117,7 +118,11 @@ export async function createAgendamento(input: NovoAgendamento) {
   if (isDevMode()) {
     const list = getLocalAgendamentos();
     const novo: Agendamento = {
-      id: "local-" + (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11)),
+      id:
+        "local-" +
+        (typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2, 11)),
       user_id: "mock-user-id",
       cliente: input.cliente,
       data_servico: input.data_servico,
@@ -142,14 +147,14 @@ export async function createAgendamento(input: NovoAgendamento) {
     ...input,
     user_id: userData.user.id,
     grupo_id: grupo ? grupo.id : null,
-  } as any);
+  } as TablesInsert<"agendamentos">);
   if (error) throw error;
 }
 
 export async function updateAgendamento(id: string, input: NovoAgendamento) {
   if (isDevMode()) {
     const list = getLocalAgendamentos();
-    const idx = list.findIndex(item => item.id === id);
+    const idx = list.findIndex((item) => item.id === id);
     if (idx !== -1) {
       list[idx] = {
         ...list[idx],
@@ -166,17 +171,14 @@ export async function updateAgendamento(id: string, input: NovoAgendamento) {
     }
     return;
   }
-  const { error } = await supabase
-    .from("agendamentos")
-    .update(input)
-    .eq("id", id);
+  const { error } = await supabase.from("agendamentos").update(input).eq("id", id);
   if (error) throw error;
 }
 
 export async function setStatus(id: string, status: Status) {
   if (isDevMode()) {
     const list = getLocalAgendamentos();
-    const idx = list.findIndex(item => item.id === id);
+    const idx = list.findIndex((item) => item.id === id);
     if (idx !== -1) {
       list[idx].status = status;
       list[idx].data_pagamento = status === "em_aberto" ? null : new Date().toISOString();
@@ -195,7 +197,7 @@ export async function setStatus(id: string, status: Status) {
 export async function deleteAgendamento(id: string) {
   if (isDevMode()) {
     const list = getLocalAgendamentos();
-    const filtered = list.filter(item => item.id !== id);
+    const filtered = list.filter((item) => item.id !== id);
     saveLocalAgendamentos(filtered);
     return;
   }
@@ -221,7 +223,7 @@ export async function listFolgas(): Promise<string[]> {
     .select("data_servico")
     .eq("cliente", FOLGA_MARKER);
   if (error) throw error;
-  return (data ?? []).map((r: any) => r.data_servico);
+  return (data ?? []).map((r) => r.data_servico);
 }
 
 export async function createFolga(data_servico: string) {
@@ -273,16 +275,14 @@ export async function createFolga(data_servico: string) {
     servicos_adicionais: [],
     user_id: userData.user.id,
     grupo_id: grupo ? grupo.id : null,
-  } as any);
+  } as TablesInsert<"agendamentos">);
   if (error) throw error;
 }
 
 export async function deleteFolga(data_servico: string) {
   if (isDevMode()) {
     const list = getLocalAgendamentos();
-    const filtered = list.filter(
-      (a) => !(isFolga(a) && a.data_servico === data_servico)
-    );
+    const filtered = list.filter((a) => !(isFolga(a) && a.data_servico === data_servico));
     saveLocalAgendamentos(filtered);
     return;
   }

@@ -16,51 +16,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CobrancaDialog } from "./CobrancaDialog";
 import { type Agendamento, currency } from "@/lib/agendamentos";
+import { getAdditionalServiceInfo, getAgendamentoTotalValue } from "@/lib/services-utils";
 
 interface RelatoriosViewProps {
   items: Agendamento[];
-}
-
-const SERVICOS_ADICIONAIS_MAP: Record<string, { label: string; preco: number }> = {
-  "BBQ cleaning": { label: "Churrasqueira", preco: 15 },
-  "Churrasqueira": { label: "Churrasqueira", preco: 15 },
-  "Window cleaning": { label: "Janelas", preco: 30 },
-  "Janelas": { label: "Janelas", preco: 30 },
-  "Pressure wash": { label: "Pressure wash", preco: 50 },
-  "Lawn mowing": { label: "Jardim", preco: 40 },
-  "Handyman": { label: "Manutenção", preco: 50 },
-};
-
-function getAdditionalServiceInfo(serviceName: string): { label: string; preco: number } {
-  const normalized = serviceName.trim();
-  
-  // Try matching "Name ($Price)" or "Name ($Price.xx)"
-  const priceMatch = normalized.match(/^(.*?)\s*\(\$?([\d.,]+)\)$/);
-  if (priceMatch) {
-    const label = priceMatch[1].trim();
-    const preco = Number(priceMatch[2].replace(",", "."));
-    return { label, preco };
-  }
-
-  if (SERVICOS_ADICIONAIS_MAP[normalized]) {
-    return SERVICOS_ADICIONAIS_MAP[normalized];
-  }
-  
-  const match = normalized.match(/\$?(\d+)/);
-  if (match) {
-    return { label: normalized, preco: Number(match[1]) };
-  }
-  return { label: normalized, preco: 15 };
-}
-
-function getAgendamentoTotalValue(item: Agendamento): number {
-  let total = Number(item.valor);
-  if (item.servicos_adicionais && item.servicos_adicionais.length > 0) {
-    item.servicos_adicionais.forEach((s) => {
-      total += getAdditionalServiceInfo(s).preco;
-    });
-  }
-  return total;
 }
 
 interface ClientSummary {
@@ -102,9 +61,7 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
 
     // Convert to array and filter/sort
     return Object.values(map)
-      .filter((summary) =>
-        summary.cliente.toLowerCase().includes(search.toLowerCase())
-      )
+      .filter((summary) => summary.cliente.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => b.totalAReceber - a.totalAReceber); // highest debt first
   }, [items, search]);
 
@@ -136,7 +93,9 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
         <Card className="shadow-card border border-border">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-medium">Total Geral a Receber</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Total Geral a Receber
+              </span>
               <p className="text-xl sm:text-2xl font-bold text-amber-600">
                 {currency(totals.aReceber)}
               </p>
@@ -150,7 +109,9 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
         <Card className="shadow-card border border-border">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-medium">Total Geral Recebido</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Total Geral Recebido
+              </span>
               <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {currency(totals.recebido)}
               </p>
@@ -164,10 +125,10 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
         <Card className="shadow-card border border-border">
           <CardContent className="p-4 sm:p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-medium">Faturamento Estimado</span>
-              <p className="text-xl sm:text-2xl font-bold text-primary">
-                {currency(totals.total)}
-              </p>
+              <span className="text-xs text-muted-foreground font-medium">
+                Faturamento Estimado
+              </span>
+              <p className="text-xl sm:text-2xl font-bold text-primary">{currency(totals.total)}</p>
             </div>
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <DollarSign className="h-5 w-5 text-primary" />
@@ -220,16 +181,26 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
                         {summary.cliente}
                       </h4>
                       <div className="flex flex-wrap gap-2 text-xs">
-                        <Badge variant="secondary" className="font-normal text-muted-foreground bg-muted/40 border">
+                        <Badge
+                          variant="secondary"
+                          className="font-normal text-muted-foreground bg-muted/40 border"
+                        >
                           {totalServicos} {totalServicos === 1 ? "trabalho" : "trabalhos"}
                         </Badge>
                         {summary.servicosPendentes > 0 && (
-                          <Badge variant="outline" className="border-warning/40 text-amber-700 bg-warning/5 font-normal">
-                            {summary.servicosPendentes} pendente{summary.servicosPendentes === 1 ? "" : "s"}
+                          <Badge
+                            variant="outline"
+                            className="border-warning/40 text-amber-700 bg-warning/5 font-normal"
+                          >
+                            {summary.servicosPendentes} pendente
+                            {summary.servicosPendentes === 1 ? "" : "s"}
                           </Badge>
                         )}
                         {summary.servicosPagos > 0 && (
-                          <Badge variant="outline" className="border-success/40 text-green-700 bg-success/5 font-normal">
+                          <Badge
+                            variant="outline"
+                            className="border-success/40 text-green-700 bg-success/5 font-normal"
+                          >
                             {summary.servicosPagos} pago{summary.servicosPagos === 1 ? "" : "s"}
                           </Badge>
                         )}
@@ -240,13 +211,19 @@ export function RelatoriosView({ items }: RelatoriosViewProps) {
                       {/* Financial info block */}
                       <div className="flex gap-6 sm:gap-8">
                         <div className="text-right">
-                          <span className="text-[10px] text-muted-foreground font-medium block">A Receber</span>
-                          <span className={`text-sm sm:text-base font-bold ${hasPending ? "text-amber-600" : "text-muted-foreground/50"}`}>
+                          <span className="text-[10px] text-muted-foreground font-medium block">
+                            A Receber
+                          </span>
+                          <span
+                            className={`text-sm sm:text-base font-bold ${hasPending ? "text-amber-600" : "text-muted-foreground/50"}`}
+                          >
                             {currency(summary.totalAReceber)}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-muted-foreground font-medium block">Recebido</span>
+                          <span className="text-[10px] text-muted-foreground font-medium block">
+                            Recebido
+                          </span>
                           <span className="text-sm sm:text-base font-semibold text-foreground/80">
                             {currency(summary.totalRecebido)}
                           </span>

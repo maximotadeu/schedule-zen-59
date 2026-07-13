@@ -36,7 +36,7 @@ export async function getGrupo(): Promise<Grupo | null> {
   try {
     // Check if the user is owner of a group
     const { data: ownGroup } = await supabase
-      .from("grupos" as any)
+      .from("grupos")
       .select("*")
       .eq("dono_id", userData.user.id)
       .maybeSingle();
@@ -45,16 +45,16 @@ export async function getGrupo(): Promise<Grupo | null> {
 
     // Check if the user is member of a group
     const { data: memberOf } = await supabase
-      .from("grupo_membros" as any)
+      .from("grupo_membros")
       .select("grupo_id")
       .eq("user_id", userData.user.id)
       .maybeSingle();
 
-    if (memberOf && (memberOf as any).grupo_id) {
+    if (memberOf && memberOf.grupo_id) {
       const { data: group } = await supabase
-        .from("grupos" as any)
+        .from("grupos")
         .select("*")
-        .eq("id", (memberOf as any).grupo_id)
+        .eq("id", memberOf.grupo_id)
         .maybeSingle();
 
       if (group) return group as unknown as Grupo;
@@ -68,7 +68,10 @@ export async function getGrupo(): Promise<Grupo | null> {
 
 export async function createGrupo(nome: string): Promise<Grupo> {
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const cleanName = nome.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  const cleanName = nome
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
   const code = `${cleanName || "AGENDA"}-${randomSuffix}`;
 
   if (isDevMode()) {
@@ -88,11 +91,11 @@ export async function createGrupo(nome: string): Promise<Grupo> {
 
   // Insert group
   const { data: group, error: groupError } = await supabase
-    .from("grupos" as any)
+    .from("grupos")
     .insert({
       nome,
       codigo_convite: code,
-      dono_id: userData.user.id
+      dono_id: userData.user.id,
     })
     .select()
     .single();
@@ -100,19 +103,17 @@ export async function createGrupo(nome: string): Promise<Grupo> {
   if (groupError) throw groupError;
 
   // Insert the owner into members table
-  const { error: memberError } = await supabase
-    .from("grupo_membros" as any)
-    .insert({
-      grupo_id: (group as any).id,
-      user_id: userData.user.id
-    });
+  const { error: memberError } = await supabase.from("grupo_membros").insert({
+    grupo_id: group.id,
+    user_id: userData.user.id,
+  });
 
   if (memberError) throw memberError;
 
   // Associate all current user's agendamentos with this group
   await supabase
     .from("agendamentos")
-    .update({ grupo_id: (group as any).id })
+    .update({ grupo_id: group.id })
     .eq("user_id", userData.user.id)
     .is("grupo_id", null);
 
@@ -139,7 +140,7 @@ export async function joinGrupo(codigo: string): Promise<Grupo> {
 
   // Find the group with code
   const { data: group, error: findError } = await supabase
-    .from("grupos" as any)
+    .from("grupos")
     .select("*")
     .eq("codigo_convite", cleanCode)
     .maybeSingle();
@@ -148,19 +149,17 @@ export async function joinGrupo(codigo: string): Promise<Grupo> {
   if (!group) throw new Error("Código de convite inválido ou grupo não encontrado");
 
   // Insert membership
-  const { error: joinError } = await supabase
-    .from("grupo_membros" as any)
-    .insert({
-      grupo_id: (group as any).id,
-      user_id: userData.user.id
-    });
+  const { error: joinError } = await supabase.from("grupo_membros").insert({
+    grupo_id: group.id,
+    user_id: userData.user.id,
+  });
 
   if (joinError && !joinError.message.includes("duplicate key")) throw joinError;
 
   // Associate all current user's agendamentos with this group
   await supabase
     .from("agendamentos")
-    .update({ grupo_id: (group as any).id })
+    .update({ grupo_id: group.id })
     .eq("user_id", userData.user.id)
     .is("grupo_id", null);
 
@@ -178,7 +177,7 @@ export async function leaveGrupo(grupoId: string): Promise<void> {
 
   // Delete membership
   const { error: leaveError } = await supabase
-    .from("grupo_membros" as any)
+    .from("grupo_membros")
     .delete()
     .eq("grupo_id", grupoId)
     .eq("user_id", userData.user.id);
@@ -187,17 +186,14 @@ export async function leaveGrupo(grupoId: string): Promise<void> {
 
   // Check if the user is owner
   const { data: ownGroup } = await supabase
-    .from("grupos" as any)
+    .from("grupos")
     .select("id")
     .eq("id", grupoId)
     .eq("dono_id", userData.user.id)
     .maybeSingle();
 
   if (ownGroup) {
-    const { error: deleteGroupError } = await supabase
-      .from("grupos" as any)
-      .delete()
-      .eq("id", grupoId);
+    const { error: deleteGroupError } = await supabase.from("grupos").delete().eq("id", grupoId);
 
     if (deleteGroupError) throw deleteGroupError;
   }

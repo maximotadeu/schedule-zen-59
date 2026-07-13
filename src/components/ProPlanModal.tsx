@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Sparkles,
-  Check,
-  Zap,
-  ShieldCheck,
-  Loader2,
-} from "lucide-react";
+import { Sparkles, Check, Zap, ShieldCheck, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +32,7 @@ export function ProPlanModal({ open, onOpenChange, onSuccess }: ProPlanModalProp
       }
 
       const { error } = await supabase.auth.updateUser({
-        data: { is_pro: true }
+        data: { is_pro: true },
       });
 
       if (error) throw error;
@@ -46,8 +40,8 @@ export function ProPlanModal({ open, onOpenChange, onSuccess }: ProPlanModalProp
       toast.success("Parabéns! Plano Pro ativado com sucesso!");
       if (onSuccess) onSuccess();
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao assinar plano Pro.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao assinar plano Pro.");
     } finally {
       setLoading(false);
     }
@@ -77,8 +71,12 @@ export function ProPlanModal({ open, onOpenChange, onSuccess }: ProPlanModalProp
                 <Check className="h-3.5 w-3.5 text-purple-600" />
               </div>
               <div className="text-left">
-                <span className="font-semibold text-xs text-foreground block">Serviços Adicionais Ilimitados</span>
-                <span className="text-[10px] text-muted-foreground">Cadastre e edite múltiplos serviços dinamicamente.</span>
+                <span className="font-semibold text-xs text-foreground block">
+                  Serviços Adicionais Ilimitados
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Cadastre e edite múltiplos serviços dinamicamente.
+                </span>
               </div>
             </div>
 
@@ -87,8 +85,12 @@ export function ProPlanModal({ open, onOpenChange, onSuccess }: ProPlanModalProp
                 <Check className="h-3.5 w-3.5 text-purple-600" />
               </div>
               <div className="text-left">
-                <span className="font-semibold text-xs text-foreground block">Compartilhamento de Agenda</span>
-                <span className="text-[10px] text-muted-foreground">Sincronize a agenda com o cônjuge ou equipe.</span>
+                <span className="font-semibold text-xs text-foreground block">
+                  Compartilhamento de Agenda
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Sincronize a agenda com o cônjuge ou equipe.
+                </span>
               </div>
             </div>
 
@@ -97,8 +99,12 @@ export function ProPlanModal({ open, onOpenChange, onSuccess }: ProPlanModalProp
                 <Check className="h-3.5 w-3.5 text-purple-600" />
               </div>
               <div className="text-left">
-                <span className="font-semibold text-xs text-foreground block">Valores Editáveis no Checkout</span>
-                <span className="text-[10px] text-muted-foreground">Ajuste o valor final dos adicionais no momento do serviço.</span>
+                <span className="font-semibold text-xs text-foreground block">
+                  Valores Editáveis no Checkout
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Ajuste o valor final dos adicionais no momento do serviço.
+                </span>
               </div>
             </div>
           </div>

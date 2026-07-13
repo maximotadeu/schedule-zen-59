@@ -7,15 +7,7 @@ function getGreeting() {
 
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  ImagePlus,
-  Send,
-  X,
-  Copy,
-  Check,
-  Camera,
-  MessageSquare,
-} from "lucide-react";
+import { ImagePlus, Send, X, Copy, Check, Camera, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -52,7 +44,6 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
   useEffect(() => {
     setMessage(`${getGreeting()}!\nSegue as fotos de hoje!\nObrigado!`);
   }, []);
-
 
   const dateLabel = (() => {
     try {
@@ -101,10 +92,9 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
     window.open(url, "_blank");
     if (photos.length > 0) {
       setTimeout(() => {
-        toast.info(
-          "Mensagem aberta no WhatsApp! Lembre-se de anexar as fotos manualmente.",
-          { duration: 5000 }
-        );
+        toast.info("Mensagem aberta no WhatsApp! Lembre-se de anexar as fotos manualmente.", {
+          duration: 5000,
+        });
       }, 800);
     }
   };
@@ -158,7 +148,16 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
             <Label>1. Selecione as fotos do serviço</Label>
 
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Área para selecionar fotos do serviço"
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 rounded-xl p-8 cursor-pointer transition-all"
             >
               <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
@@ -190,7 +189,10 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
           {photos.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>{photos.length} foto{photos.length !== 1 ? "s" : ""} selecionada{photos.length !== 1 ? "s" : ""}</Label>
+                <Label>
+                  {photos.length} foto{photos.length !== 1 ? "s" : ""} selecionada
+                  {photos.length !== 1 ? "s" : ""}
+                </Label>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -205,12 +207,11 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {photos.map((photo) => (
-                  <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border">
-                    <img
-                      src={photo.url}
-                      alt={photo.name}
-                      className="h-full w-full object-cover"
-                    />
+                  <div
+                    key={photo.id}
+                    className="relative group aspect-square rounded-lg overflow-hidden border"
+                  >
+                    <img src={photo.url} alt={photo.name} className="h-full w-full object-cover" />
                     <button
                       onClick={() => handleRemovePhoto(photo.id)}
                       className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
@@ -245,8 +246,8 @@ export function FotosDialog({ agendamento, trigger }: FotosDialogProps) {
               <span>💡</span>
               <span>
                 O WhatsApp Web não permite enviar arquivos por link. Ao clicar em{" "}
-                <strong>"Enviar via WhatsApp"</strong>, a mensagem será aberta no WhatsApp.
-                Você precisará <strong>anexar as fotos manualmente</strong> na conversa.
+                <strong>"Enviar via WhatsApp"</strong>, a mensagem será aberta no WhatsApp. Você
+                precisará <strong>anexar as fotos manualmente</strong> na conversa.
               </span>
             </div>
           )}

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 function NotFoundComponent() {
   return (
@@ -82,12 +83,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "AgendaPro — Agenda & Controle Financeiro de Serviços" },
       {
         property: "og:description",
-        content: "Organize seus agendamentos e o pagamento dos serviços prestados em um só lugar. Simples, rápido e responsivo.",
+        content:
+          "Organize seus agendamentos e o pagamento dos serviços prestados em um só lugar. Simples, rápido e responsivo.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "AgendaPro — Agenda & Controle Financeiro de Serviços" },
-      { name: "twitter:description", content: "Organize seus agendamentos e o pagamento dos serviços prestados em um só lugar. Simples, rápido e responsivo." },
+      {
+        name: "twitter:description",
+        content:
+          "Organize seus agendamentos e o pagamento dos serviços prestados em um só lugar. Simples, rápido e responsivo.",
+      },
     ],
     links: [
       {
@@ -142,7 +148,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

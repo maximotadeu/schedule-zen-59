@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CobrancaDialog } from "./CobrancaDialog";
 import { type Agendamento, currency } from "@/lib/agendamentos";
+import { getAdditionalServiceInfo, getAgendamentoTotalValue } from "@/lib/services-utils";
 
 interface ClientesViewProps {
   items: Agendamento[];
@@ -26,38 +27,6 @@ interface ClientStats {
   totalPagos: number;
   saldoPendente: number;
   saldoPago: number;
-}
-
-const SERVICOS_ADICIONAIS_MAP: Record<string, { label: string; preco: number }> = {
-  "BBQ cleaning": { label: "Churrasqueira", preco: 15 },
-  "Churrasqueira": { label: "Churrasqueira", preco: 15 },
-  "Window cleaning": { label: "Janelas", preco: 30 },
-  "Janelas": { label: "Janelas", preco: 30 },
-  "Pressure wash": { label: "Pressure wash", preco: 50 },
-  "Lawn mowing": { label: "Jardim", preco: 40 },
-  "Handyman": { label: "Manutenção", preco: 50 },
-};
-
-function getAdditionalServiceInfo(serviceName: string): { label: string; preco: number } {
-  const normalized = serviceName.trim();
-  if (SERVICOS_ADICIONAIS_MAP[normalized]) {
-    return SERVICOS_ADICIONAIS_MAP[normalized];
-  }
-  const match = normalized.match(/\$?(\d+)/);
-  if (match) {
-    return { label: normalized, preco: Number(match[1]) };
-  }
-  return { label: normalized, preco: 15 };
-}
-
-function getAgendamentoTotalValue(item: Agendamento): number {
-  let total = Number(item.valor);
-  if (item.servicos_adicionais && item.servicos_adicionais.length > 0) {
-    item.servicos_adicionais.forEach((s) => {
-      total += getAdditionalServiceInfo(s).preco;
-    });
-  }
-  return total;
 }
 
 export function ClientesView({ items }: ClientesViewProps) {
@@ -83,7 +52,7 @@ export function ClientesView({ items }: ClientesViewProps) {
 
       const val = getAgendamentoTotalValue(item);
       map[name].totalAgendamentos += 1;
-      
+
       if (item.status === "em_aberto") {
         map[name].totalPendentes += 1;
         map[name].saldoPendente += val;
@@ -161,17 +130,26 @@ export function ClientesView({ items }: ClientesViewProps) {
                 const hasPending = client.saldoPendente > 0;
 
                 return (
-                  <Card key={client.nome} className="shadow-card hover:shadow-md transition-all border border-border flex flex-col justify-between">
+                  <Card
+                    key={client.nome}
+                    className="shadow-card hover:shadow-md transition-all border border-border flex flex-col justify-between"
+                  >
                     <CardContent className="p-4 flex flex-col gap-4 h-full justify-between">
                       {/* Top Info */}
                       <div className="flex items-start gap-3">
-                        <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm ${colorClass}`}>
+                        <div
+                          className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm ${colorClass}`}
+                        >
                           {initials(client.nome)}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-base text-foreground truncate">{client.nome}</h4>
+                          <h4 className="font-bold text-base text-foreground truncate">
+                            {client.nome}
+                          </h4>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {client.totalAgendamentos} {client.totalAgendamentos === 1 ? "atendimento" : "atendimentos"} no total
+                            {client.totalAgendamentos}{" "}
+                            {client.totalAgendamentos === 1 ? "atendimento" : "atendimentos"} no
+                            total
                           </p>
                         </div>
                       </div>
@@ -179,13 +157,19 @@ export function ClientesView({ items }: ClientesViewProps) {
                       {/* Middle Stats Info */}
                       <div className="grid grid-cols-2 gap-2 bg-muted/20 p-2.5 rounded-lg text-xs border">
                         <div className="space-y-0.5">
-                          <span className="text-[10px] text-muted-foreground block font-medium">Saldo Pendente</span>
-                          <span className={`font-bold ${hasPending ? "text-amber-600" : "text-muted-foreground/60"}`}>
+                          <span className="text-[10px] text-muted-foreground block font-medium">
+                            Saldo Pendente
+                          </span>
+                          <span
+                            className={`font-bold ${hasPending ? "text-amber-600" : "text-muted-foreground/60"}`}
+                          >
                             {currency(client.saldoPendente)}
                           </span>
                         </div>
                         <div className="space-y-0.5 text-right sm:text-left">
-                          <span className="text-[10px] text-muted-foreground block font-medium">Saldo Pago</span>
+                          <span className="text-[10px] text-muted-foreground block font-medium">
+                            Saldo Pago
+                          </span>
                           <span className="font-semibold text-foreground/80">
                             {currency(client.saldoPago)}
                           </span>

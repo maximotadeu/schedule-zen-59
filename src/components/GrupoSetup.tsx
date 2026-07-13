@@ -1,16 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  Users,
-  Copy,
-  Check,
-  Plus,
-  ArrowRight,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { Users, Copy, Check, Plus, ArrowRight, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getGrupo, createGrupo, joinGrupo, leaveGrupo, type Grupo } from "@/lib/grupos";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,8 +75,8 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
       setNomeGrupo("");
       toast.success("Agenda compartilhada criada com sucesso!");
       onGroupChange();
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao criar grupo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao criar grupo");
     } finally {
       setSubmitting(false);
     }
@@ -105,8 +98,8 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
       setCodigoConvite("");
       toast.success("Você entrou na agenda compartilhada!");
       onGroupChange();
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao entrar no grupo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao entrar no grupo");
     } finally {
       setSubmitting(false);
     }
@@ -115,9 +108,14 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
   async function handleLeave() {
     if (!grupo) return;
     const isOwner = grupo.dono_id === currentUserId || localStorage.getItem("dev_mode") === "true";
-    
+
     if (isOwner) {
-      if (!confirm("Você é o dono deste grupo. Se sair, o grupo será excluído para todos. Tem certeza?")) return;
+      if (
+        !confirm(
+          "Você é o dono deste grupo. Se sair, o grupo será excluído para todos. Tem certeza?",
+        )
+      )
+        return;
     } else {
       if (!confirm("Deseja mesmo sair desta agenda compartilhada?")) return;
     }
@@ -128,8 +126,8 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
       setGrupo(null);
       toast.success(isOwner ? "Grupo excluído" : "Você saiu do grupo");
       onGroupChange();
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao sair do grupo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao sair do grupo");
     } finally {
       setSubmitting(false);
     }
@@ -162,10 +160,13 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
                   <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                     <Users className="h-4.5 w-4.5 text-indigo-600" />
                   </div>
-                  <span className="font-semibold text-base">Agenda Compartilhada: {grupo.nome}</span>
+                  <span className="font-semibold text-base">
+                    Agenda Compartilhada: {grupo.nome}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Copie o link abaixo para compartilhar o acesso de leitura e edição com outra pessoa.
+                  Copie o link abaixo para compartilhar o acesso de leitura e edição com outra
+                  pessoa.
                 </p>
               </div>
 
@@ -176,7 +177,11 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
                   onClick={handleCopyLink}
                   className="h-8 cursor-pointer gap-1.5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
                 >
-                  {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-green-600" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
                   <span>{copied ? "Link Copiado!" : "Copiar Link de Convite"}</span>
                 </Button>
 
@@ -202,14 +207,18 @@ export function GrupoSetup({ onGroupChange }: GrupoSetupProps) {
                   <h3 className="font-bold text-base flex items-center gap-1.5">
                     Compartilhar Agenda
                     {!isPro && (
-                      <Badge variant="outline" className="text-[9px] px-1 border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-50/10 flex items-center gap-0.5 font-semibold">
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] px-1 border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-50/10 flex items-center gap-0.5 font-semibold"
+                      >
                         <Sparkles className="h-2.5 w-2.5 fill-purple-600 dark:fill-purple-400" />
                         Pro
                       </Badge>
                     )}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Compartilhe a mesma agenda com sua esposa ou outro membro da equipe. Escolha uma das opções abaixo:
+                    Compartilhe a mesma agenda com sua esposa ou outro membro da equipe. Escolha uma
+                    das opções abaixo:
                   </p>
                 </div>
               </div>
